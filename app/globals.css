@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0a0b0d;
+  --paper: #f3f1ea;
+  --graphite: #8b8d93;
+  --signal: #ff5a2e;
+  --terminal: #43ff9c;
+
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-press: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 150ms;
+  --dur-reveal: 600ms;
+  --dur-cinematic: 1100ms;
+
+  --fs-mega: clamp(4.2rem, 15vw, 13.5rem);
+  --fs-display: clamp(2.4rem, 8.6vw, 7.5rem);
+  --fs-heading: clamp(1.5rem, 3.4vw, 3.1rem);
+  --fs-subheading: clamp(1.05rem, 1.7vw, 1.5rem);
+  --fs-body: clamp(0.95rem, 1.05vw, 1.05rem);
+  --fs-label: clamp(0.66rem, 0.82vw, 0.78rem);
+  /* Escala própria para números presos a colunas estreitas (métricas do
+     Commerce) — não reaproveita --fs-display, que estoura em grids de 3col. */
+  --fs-metric: clamp(1.9rem, 3.6vw, 3.4rem);
+  --fs-metric-before: clamp(1.05rem, 1.7vw, 1.6rem);
+
+  --gutter: clamp(1.25rem, 4vw, 3.5rem);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: auto;
+  overflow-x: clip;
+  background-color: var(--ink);
+}
+
+body {
+  background-color: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body), sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--ink);
+}
+
+.font-display {
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: -0.02em;
+  font-feature-settings: "opsz" 96;
+}
+
+.font-mono-label {
+  font-family: var(--font-mono), monospace;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.text-mega {
+  font-size: var(--fs-mega);
+  line-height: 0.86;
+}
+
+.text-display {
+  font-size: var(--fs-display);
+  line-height: 0.92;
+}
+
+.text-heading {
+  font-size: var(--fs-heading);
+  line-height: 1.05;
+}
+
+.text-subheading {
+  font-size: var(--fs-subheading);
+  line-height: 1.3;
+}
+
+.text-body {
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.text-label {
+  font-size: var(--fs-label);
+}
+
+.text-metric {
+  font-size: var(--fs-metric);
+  line-height: 1;
+}
+
+.text-metric-before {
+  font-size: var(--fs-metric-before);
+  line-height: 1;
+}
+
+/* Grão sutil e discreto — acabamento, nunca decoração pesada */
+.grain-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.custom-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--paper);
+  mix-blend-mode: difference;
+  pointer-events: none;
+  z-index: 200;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition:
+    opacity var(--dur-micro) var(--ease-standard),
+    width var(--dur-reveal) var(--ease-standard),
+    height var(--dur-reveal) var(--ease-standard),
+    padding var(--dur-reveal) var(--ease-standard);
+  will-change: transform;
+}
+
+.custom-cursor[data-active="true"] {
+  opacity: 1;
+}
+
+.custom-cursor[data-variant="label"] {
+  width: auto;
+  height: auto;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  background: var(--signal);
+  mix-blend-mode: normal;
+  color: var(--ink);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .custom-cursor {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

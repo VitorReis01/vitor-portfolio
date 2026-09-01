@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Builds e saidas geradas
+.next/
+out/
+build/
+
+# Variaveis de ambiente - nunca versionar segredo real
+.env
+.env*.local
+
+# Vercel
+.vercel
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Temporarios
+*.tmp
+*.bak
