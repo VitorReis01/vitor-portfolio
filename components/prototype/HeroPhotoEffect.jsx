@@ -350,6 +350,15 @@ export default function HeroPhotoEffect({ reducedMotion, heroSectionRef }) {
         let frameId = null;
         let visible = true;
         let running = true;
+        // Pausado de fora (TransitionLayer.jsx) quando o Hero já está
+        // 100% coberto pelas faixas do handoff pra Selected Work —
+        // opacity:0 sozinho não tira o elemento da interseção do
+        // IntersectionObserver abaixo (o container continua geometricamente
+        // no viewport, só visualmente invisível), então sem isso o loop
+        // continuava desenhando ~30 mil células + bloom/grain todo frame
+        // atrás de faixas totalmente fechadas. Nenhuma linha de desenho
+        // muda — só para/retoma o mesmo loop.
+        let paused = false;
         const timer = { start: performance.now(), last: performance.now() };
 
         const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -387,7 +396,7 @@ export default function HeroPhotoEffect({ reducedMotion, heroSectionRef }) {
 
         function tick(now) {
           frameId = null;
-          if (!running || !visible) return;
+          if (!running || !visible || paused) return;
 
           const dt = Math.min((now - timer.last) / 1000, 0.05);
           timer.last = now;
@@ -421,6 +430,15 @@ export default function HeroPhotoEffect({ reducedMotion, heroSectionRef }) {
         }
         frameId = requestAnimationFrame(tick);
 
+        function handleCanvasPause(event) {
+          paused = !!event.detail?.paused;
+          if (!paused && running && visible && frameId === null) {
+            timer.last = performance.now();
+            frameId = requestAnimationFrame(tick);
+          }
+        }
+        window.addEventListener("hero-canvas-pause", handleCanvasPause);
+
         let scrollTrigger;
         if (heroSectionRef?.current) {
           gsap.registerPlugin(ScrollTrigger);
@@ -440,6 +458,7 @@ export default function HeroPhotoEffect({ reducedMotion, heroSectionRef }) {
           running = false;
           if (frameId !== null) cancelAnimationFrame(frameId);
           io.disconnect();
+          window.removeEventListener("hero-canvas-pause", handleCanvasPause);
           if (removeListeners) removeListeners();
           if (scrollTrigger) scrollTrigger.kill();
           container.removeChild(displayCanvas);

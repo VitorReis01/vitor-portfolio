@@ -3,13 +3,31 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText";
-import { PROJECTS } from "@/lib/projects";
 
 // Fase 4 — protótipo 02 (Hero → Selected Work). O Hero em si não é
 // alterado: este componente só observa/controla de fora (opacidade,
 // ScrollTrigger próprio do HeroPhotoEffect desabilitado via API pública do
 // GSAP) e desenha por cima a coreografia de handoff.
+//
+// Refinamento posterior: existia uma "prévia" do IMESUL (poster + label)
+// revelada pelas faixas ANTES do SelectedWorkStage real assumir — lida
+// como uma tela intermediária própria ("Hero → trailer do IMESUL →
+// IMESUL de novo"). Removida por completo. Agora as faixas revelam
+// diretamente para o fim do pin: a janela de retração foi deslocada pra
+// terminar bem perto de progress=1, então não sobra um "buraco" pinado
+// mostrando só ink vazio entre as faixas abertas e o SelectedWorkStage
+// real assumindo — as duas coisas acontecem em sequência imediata.
+//
+// Fase 5 — correção de ritmo (vídeo real mostrou sensação de
+// travamento). Diagnóstico medido: pin de `+=150%`/`+=100%` (desktop/
+// mobile) tinha um HOLD explícito de 5% do progresso (0.5–0.55) com as
+// faixas 100% fechadas antes de começarem a abrir — a 150% de distância,
+// isso sozinho já era ~11% de uma viewport inteira de preto sólido,
+// sem contar o tempo de abertura em si, que só começava DEPOIS desse
+// hold. Corrigido: pin encurtado (+=80%/+=55%) e o hold explícito
+// removido — fechamento e abertura agora são CONTÍNUOS (a última faixa
+// termina de fechar no mesmo instante em que a primeira já começa a
+// abrir, sem platô no meio). Ver `PIN_END`/percentuais no onUpdate.
 //
 // Larguras das faixas — irregulares de propósito (não é persiana de
 // PowerPoint), mas fixas (não Math.random() no render) pra não gerar
@@ -28,7 +46,6 @@ const PARTICLES = Array.from({ length: PARTICLE_COUNT_DESKTOP }, (_, i) => ({
   size: 1.4 + ((i * 7) % 5) * 0.3,
 }));
 
-const IMESUL = PROJECTS[0];
 const THREAD_COLOR = "150, 225, 255";
 
 function remap(value, inMin, inMax) {
@@ -41,9 +58,7 @@ export default function TransitionLayer({ reducedMotion }) {
   const stripRefs = useRef([]);
   const particleLayerRef = useRef(null);
   const particleRefs = useRef([]);
-  const labelRef = useRef(null);
-  const previewWrapRef = useRef(null);
-  const splitFiredRef = useRef(false);
+  const heroCoveredRef = useRef(false);
 
   useLayoutEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -54,15 +69,20 @@ export default function TransitionLayer({ reducedMotion }) {
     // componente diferente no mesmo commit.
     const stageWrap = rootRef.current?.closest("[data-transition-stage]");
     if (!stageWrap) return undefined;
-    gsap.registerPlugin(ScrollTrigger, SplitText);
+    gsap.registerPlugin(ScrollTrigger);
 
     const heroEl = document.getElementById("hero");
     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
     const activeParticles = particleRefs.current.slice(0, isDesktop ? PARTICLE_COUNT_DESKTOP : PARTICLE_COUNT_MOBILE);
 
-    gsap.set(stripRefs.current, { scaleY: 1 });
-    gsap.set(previewWrapRef.current, { opacity: 0, scale: 0.94 });
-    gsap.set(labelRef.current, { opacity: 0 });
+    // Achado na integração: as faixas começavam FECHADAS (scaleY:1) desde
+    // o primeiro frame — cobriam o Hero por inteiro antes de qualquer
+    // scroll, sem nenhuma fase que as abrisse primeiro. Bug pré-existente
+    // (reproduzido em /prototype/hero-to-contact também, não é algo novo
+    // desta integração) — nunca tinha sido percebido visualmente porque
+    // os testes anteriores sempre começavam já rolados. Corrigido abaixo:
+    // abertas em repouso, fecham em sincronia com o fade do Hero.
+    gsap.set(stripRefs.current, { scaleY: 0 });
     gsap.set(particleLayerRef.current, { opacity: 0 });
     gsap.set(activeParticles, { opacity: 0 });
 
@@ -85,57 +105,63 @@ export default function TransitionLayer({ reducedMotion }) {
     }
 
     const ctx = gsap.context(() => {
-      const pinEnd = isDesktop ? "+=150%" : "+=100%";
-
-      const fireLabelSplit = () => {
-        if (splitFiredRef.current || !labelRef.current) return;
-        splitFiredRef.current = true;
-        const split = new SplitText(labelRef.current, { type: "chars" });
-        gsap.set(labelRef.current, { opacity: 1 });
-        gsap.fromTo(
-          split.chars,
-          { opacity: 0, y: (i) => (i % 2 === 0 ? -6 : 6), filter: "blur(3px)" },
-          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.4, stagger: 0.02, ease: "power2.out" }
-        );
-      };
+      // Encurtado de +=150%/+=100% — a distância antiga, somada ao hold
+      // explícito que existia (ver abaixo), fazia a ponte inteira demorar
+      // demais e dar sensação de travamento (achado com scroll real, não
+      // só medição). Mesma proporção desktop/mobile de antes (~1.5x).
+      const pinEnd = isDesktop ? "+=80%" : "+=55%";
 
       const st = ScrollTrigger.create({
         trigger: stageWrap,
         start: "top top",
         end: pinEnd,
         pin: true,
-        scrub: 0.5,
+        // Resposta mais firme — scrub alto nessa ponte especificamente lia
+        // como atraso entre a rodinha do mouse e a resposta visual, o que
+        // reforçava a sensação de travamento. Lenis global não muda.
+        scrub: 0.35,
         onUpdate: (self) => {
           const p = self.progress;
 
-          // 0.20–0.50: o rosto/interface do Hero perde densidade — a MESMA
-          // seção inteira (canvas + headline + subline + placa), não só o
-          // canvas, porque a "interface perdendo presença" é o Hero como
-          // um todo, não só o retrato.
-          const heroT = remap(p, 0.2, 0.5);
+          // 0–30%: o rosto/interface do Hero perde densidade (canvas +
+          // headline + subline + placa, a seção inteira) EM SINCRONIA com
+          // o fechamento das faixas — mesmo blackout único.
+          // 30–32%: turnaround — só o suficiente pra não haver um "pulo"
+          // matemático entre fechar e abrir; não é mais um hold
+          // perceptível (era 5% de uma distância 1.9x maior antes; agora
+          // é 2% de uma distância bem menor — na prática, imperceptível).
+          // 32–85%: faixas abrem revelando o SelectedWorkStage real, cada
+          // uma com seu próprio atraso (nunca todas juntas).
+          // 85–100%: Selected Work já estabelecido, pin solta.
+          const heroT = remap(p, 0, 0.3);
           if (heroEl) {
             gsap.set(heroEl, { opacity: 1 - heroT, scale: 1 + heroT * 0.05, filter: `blur(${heroT * 5}px)` });
           }
 
-          // 0.45–0.70: faixas revelam a cena seguinte, cada uma com seu
-          // próprio atraso — nunca todas se movendo juntas.
-          const maskT = remap(p, 0.45, 0.7);
+          const closing = remap(p, 0, 0.3);
+          const maskT = remap(p, 0.32, 0.85);
           stripRefs.current.forEach((strip, i) => {
             if (!strip) return;
-            const local = remap(maskT, i * 0.05, i * 0.05 + 0.55);
-            gsap.set(strip, { scaleY: 1 - local });
+            const opening = remap(maskT, i * 0.05, i * 0.05 + 0.55);
+            gsap.set(strip, { scaleY: Math.min(closing, 1 - opening) });
           });
-          if (maskT > 0.35) fireLabelSplit();
 
-          // 0.55–0.88: a prévia do IMESUL ganha presença DEPOIS que o Hero
-          // já sumiu (0.5) — nunca os dois legíveis ao mesmo tempo.
-          const previewT = remap(p, 0.55, 0.88);
-          gsap.set(previewWrapRef.current, { opacity: previewT, scale: 0.94 + previewT * 0.06 });
-
-          // Partículas: sobem/somem num envelope triangular sobre a janela
-          // 0.18–0.82 — acompanham o reveal sem serem o efeito principal.
-          const particleT = Math.min(remap(p, 0.18, 0.4), 1 - remap(p, 0.68, 0.85));
+          // Partículas: envelope triangular reescalado pra mesma janela.
+          const particleT = Math.min(remap(p, 0.12, 0.3), 1 - remap(p, 0.62, 0.85));
           gsap.set(particleLayerRef.current, { opacity: particleT });
+
+          // Performance: o loop rAF do canvas do Hero (HeroPhotoEffect.jsx)
+          // só é gated por IntersectionObserver — opacity:0 não tira o
+          // elemento da interseção geométrica, então ele continuava
+          // desenhando ~30 mil células + bloom/grain TODO frame mesmo
+          // 100% coberto pelas faixas (medido, não suposição — ver relato
+          // final). Pausa só quando heroT chega em 1 (já visualmente
+          // coberto, nunca antes) e retoma se o usuário rolar de volta.
+          const covered = heroT >= 1;
+          if (covered !== heroCoveredRef.current) {
+            heroCoveredRef.current = covered;
+            window.dispatchEvent(new CustomEvent("hero-canvas-pause", { detail: { paused: covered } }));
+          }
         },
       });
 
@@ -160,6 +186,10 @@ export default function TransitionLayer({ reducedMotion }) {
 
     return () => {
       disabledTriggers.forEach((sTrigger) => sTrigger.enable());
+      if (heroCoveredRef.current) {
+        heroCoveredRef.current = false;
+        window.dispatchEvent(new CustomEvent("hero-canvas-pause", { detail: { paused: false } }));
+      }
       ctx.revert();
     };
   }, [reducedMotion]);
@@ -182,28 +212,6 @@ export default function TransitionLayer({ reducedMotion }) {
             }}
           />
         ))}
-      </div>
-
-      {/* Prévia leve do IMESUL — não é a SelectedWorkStage real, só um eco
-          visual revelado pelas faixas; a seção real assume por trás assim
-          que o pin termina. */}
-      <div ref={previewWrapRef} className="absolute inset-0 flex items-center justify-center px-[var(--gutter)]">
-        <div className="relative w-full max-w-3xl overflow-hidden rounded-md" style={{ aspectRatio: "16 / 9" }}>
-          <img
-            src={IMESUL.media.poster}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ filter: "saturate(0.9)" }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
-          <span className="font-mono-label text-label absolute left-5 top-5 text-paper/70">01 / 03</span>
-          <span
-            ref={labelRef}
-            className="font-display absolute bottom-5 left-5 text-2xl font-semibold uppercase text-paper md:text-3xl"
-          >
-            SELECTED WORK
-          </span>
-        </div>
       </div>
 
       {/* Faixas — largura irregular, atraso próprio, borda ciano fina na

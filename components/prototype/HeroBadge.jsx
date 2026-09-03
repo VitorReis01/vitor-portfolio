@@ -11,11 +11,11 @@ import gsap from "gsap";
 
 const BADGE_ITEMS = [
   { title: "BACKEND", tags: ["Node.js", "TypeScript", "PostgreSQL", "REST APIs"] },
-  { title: "SYSTEM BUILDER", tags: ["Next.js", "React", "Tailwind", "GSAP"] },
+  { title: "CONSTRUTOR DE SISTEMAS", tags: ["Next.js", "React", "Tailwind", "GSAP"] },
   { title: "FULL STACK", tags: ["Next.js", "Node.js", "PostgreSQL", "Git"] },
-  { title: "AUTOMATION", tags: ["Node.js", "REST APIs", "PostgreSQL"] },
-  { title: "UI ENGINEERING", tags: ["React", "Tailwind", "GSAP"] },
-  { title: "PROBLEM SOLVER", tags: ["Systems", "Architecture", "Performance"] },
+  { title: "AUTOMAÇÃO", tags: ["Node.js", "REST APIs", "PostgreSQL"] },
+  { title: "ENGENHARIA DE UI", tags: ["React", "Tailwind", "GSAP"] },
+  { title: "RESOLVEDOR DE PROBLEMAS", tags: ["Sistemas", "Arquitetura", "Desempenho"] },
 ];
 
 const CYCLE_INTERVAL = 3000;
