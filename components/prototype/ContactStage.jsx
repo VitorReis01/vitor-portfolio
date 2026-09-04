@@ -13,11 +13,12 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 // entrada dele é 100% dirigida pelas refs vindas de fora (mesmo
 // `self.progress` que desenha o dither), nunca anima sozinho.
 //
-// ContactClosing — o encerramento (Instagram → SYSTEM READY → AWAITING
-// INPUT_). Vive FORA do pin, em fluxo normal, com sua própria entrada
-// simples ligada à própria posição de scroll — deliberadamente
-// desacoplado do statement principal, pra não misturar "CTA chegou" com
-// "site terminou".
+// ContactClosing — o encerramento (link do Instagram). Vive FORA do pin,
+// em fluxo normal, com sua própria entrada simples ligada à própria
+// posição de scroll — deliberadamente desacoplado do statement
+// principal, pra não misturar "CTA chegou" com "site terminou". É
+// literalmente o fim do documento — sem min-height reservada além do
+// necessário pro próprio conteúdo, pra não sobrar scroll depois dele.
 
 const HEADLINE_LINES = ["VAMOS CONSTRUIR", "ALGO QUE FUNCIONE", "DE VERDADE?"];
 const SUBTEXT = "Se você tem uma ideia, um problema ou um processo que pode funcionar melhor, vamos conversar.";
@@ -211,19 +212,17 @@ export function ContactMainStage({
 export function ContactClosing({ reducedMotion }) {
   const closingRef = useRef(null);
   const linkRef = useRef(null);
-  const awaitingRef = useRef(null);
 
   useLayoutEffect(() => {
     if (typeof window === "undefined") return undefined;
     gsap.registerPlugin(ScrollTrigger);
 
     if (reducedMotion) {
-      gsap.set([linkRef.current, awaitingRef.current], { opacity: 1, y: 0 });
+      gsap.set(linkRef.current, { opacity: 1, y: 0 });
       return undefined;
     }
 
     gsap.set(linkRef.current, { opacity: 0, y: 12 });
-    gsap.set(awaitingRef.current, { opacity: 0, y: 10 });
 
     const ctx = gsap.context(() => {
       const st = ScrollTrigger.create({
@@ -233,10 +232,7 @@ export function ContactClosing({ reducedMotion }) {
         scrub: 0.4,
         onUpdate: (self) => {
           const p = self.progress;
-          const linkT = gsap.utils.clamp(0, 1, p / 0.55);
-          const awaitT = gsap.utils.clamp(0, 1, (p - 0.45) / 0.55);
-          gsap.set(linkRef.current, { opacity: linkT, y: 12 * (1 - linkT) });
-          gsap.set(awaitingRef.current, { opacity: awaitT, y: 10 * (1 - awaitT) });
+          gsap.set(linkRef.current, { opacity: p, y: 12 * (1 - p) });
         },
       });
       return () => st.kill();
@@ -246,7 +242,7 @@ export function ContactClosing({ reducedMotion }) {
   }, [reducedMotion]);
 
   return (
-    <div ref={closingRef} className="relative flex min-h-[60vh] flex-col items-center justify-center gap-10 bg-ink px-[var(--gutter)] py-24 text-center">
+    <div ref={closingRef} className="relative flex flex-col items-center justify-center bg-ink px-[var(--gutter)] py-16 text-center">
       {/*
         Único canal de contato real confirmado no projeto todo — mesma
         regra do ContactSection.jsx aprovado da página principal. Nada
@@ -264,11 +260,6 @@ export function ContactClosing({ reducedMotion }) {
       >
         Instagram — @vitor.systems
       </a>
-
-      <div ref={awaitingRef} className="flex flex-col items-center gap-1">
-        <span className="font-mono-label text-label text-graphite/40">SISTEMA PRONTO</span>
-        <span className="font-mono-label text-label text-paper/60">AGUARDANDO ENTRADA_</span>
-      </div>
     </div>
   );
 }

@@ -84,9 +84,15 @@ export default function EnergyThread({ reducedMotion, lightSectionIds = DEFAULT_
       }
 
       function build() {
-        const { totalHeight, threadX, sections } = measure();
         const svg = svgRef.current;
         const path = pathRef.current;
+        // O próprio SVG é absolute inset-0 sem overflow:hidden no
+        // ancestral, então sua altura conta para wrapper.scrollHeight —
+        // se não zerarmos antes de medir, um refresh só re-lê a altura
+        // (possivelmente errada) que ELE MESMO deixou no build anterior e
+        // nunca consegue encolher de volta, só crescer.
+        svg.setAttribute("height", "0");
+        const { totalHeight, threadX, sections } = measure();
         svg.setAttribute("height", totalHeight);
         svg.setAttribute("viewBox", `0 0 100 ${totalHeight}`);
         path.setAttribute("d", buildPathD(totalHeight, threadX));
@@ -150,6 +156,9 @@ export default function EnergyThread({ reducedMotion, lightSectionIds = DEFAULT_
       gsap.to(headRef.current, { scale: 1.3, duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: -1, transformOrigin: "center" });
 
       // Nós por seção: pulso + partículas, uma vez, quando o scroll chega ali.
+      // Guardado por id pra o refresh de fontes (abaixo) poder reposicionar
+      // cada nó sem recriá-lo.
+      const nodeBySectionId = {};
       sections.forEach((s) => {
         const el = document.getElementById(s.id);
         if (!el) return;
@@ -162,6 +171,7 @@ export default function EnergyThread({ reducedMotion, lightSectionIds = DEFAULT_
         node.style.pointerEvents = "none";
         nodesRootRef.current.appendChild(node);
         gsap.set(node, { y: s.top + 6 });
+        nodeBySectionId[s.id] = node;
 
         const glow = document.createElement("div");
         glow.style.position = "absolute";
@@ -219,21 +229,63 @@ export default function EnergyThread({ reducedMotion, lightSectionIds = DEFAULT_
         });
       });
 
+      // Reconstrói tudo que depende de totalHeight/sections (SVG, path,
+      // gradiente e a posição de cada nó) e reposiciona os nós já criados
+      // acima pros novos s.top — sem isso, um refresh só corrigia o SVG e
+      // deixava os nós de pulso presos na posição antiga.
+      function refreshLayout() {
+        const rebuilt = build();
+        totalHeight = rebuilt.totalHeight;
+        threadX = rebuilt.threadX;
+        sections = rebuilt.sections;
+        sections.forEach((s) => {
+          const node = nodeBySectionId[s.id];
+          if (node) gsap.set(node, { y: s.top + 6 });
+        });
+        ScrollTrigger.refresh();
+      }
+
       let resizeTimer;
       function handleResize() {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          const rebuilt = build();
-          totalHeight = rebuilt.totalHeight;
-          threadX = rebuilt.threadX;
-          sections = rebuilt.sections;
-          ScrollTrigger.refresh();
-        }, 200);
+        resizeTimer = setTimeout(refreshLayout, 200);
       }
       window.addEventListener("resize", handleResize);
+
+      // Mesma causa raiz do refresh defensivo já usado em
+      // SelectedWorkStage.jsx/HowIBuildStage.jsx: se a fonte custom
+      // (--font-display) ou os pins deles ainda não tinham assentado no
+      // instante deste useLayoutEffect, o "+=300%" dos pins de Selected
+      // Work/How I Build é calculado em cima de uma altura temporariamente
+      // errada — o SVG do EnergyThread tinha sua altura (medida de
+      // `wrapper.scrollHeight` naquele instante) congelada no `build()`
+      // inicial e nunca reagia à correção. Sendo um `absolute inset-0` sem
+      // overflow:hidden no ancestral, ficava maior que o documento real e
+      // por isso passava a DITAR o scrollHeight da página inteira.
+      //
+      // Um único `document.fonts.ready` não é suficiente — o tempo até os
+      // pins de outros componentes assentarem varia. Em vez de adivinhar
+      // um delay, observa a altura real do wrapper: só refaz o layout
+      // quando ela muda de verdade, e para sozinho quando estabiliza
+      // (build() já zera a própria altura do SVG antes de medir, então
+      // não conta a si mesmo — sem isso o observer nunca convergiria,
+      // só cresceria).
+      let settleTimer;
+      let lastHeight = wrapper.scrollHeight;
+      const heightObserver = new ResizeObserver(() => {
+        const height = wrapper.scrollHeight;
+        if (height === lastHeight) return;
+        lastHeight = height;
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(refreshLayout, 120);
+      });
+      heightObserver.observe(wrapper);
+
       removeResize = () => {
         window.removeEventListener("resize", handleResize);
         clearTimeout(resizeTimer);
+        clearTimeout(settleTimer);
+        heightObserver.disconnect();
       };
     }, wrapper);
 

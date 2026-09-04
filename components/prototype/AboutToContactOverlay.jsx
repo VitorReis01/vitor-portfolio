@@ -209,6 +209,13 @@ export default function AboutToContactOverlay({ reducedMotion }) {
           scrub: 0.3,
           onUpdate: (self) => draw(self.progress),
         });
+        // kill() para o trigger antigo mas não desfaz o que os gsap.set()
+        // dele já tinham aplicado (canvas/contactWrapRef ficam presos no
+        // último estado antes da troca) — sem sincronizar aqui, recriar o
+        // trigger enquanto o usuário já rolou além do reveal deixava
+        // canvas e conteúdo em opacidades contraditórias (tela preta com
+        // #contact já em opacity:1 por baixo).
+        draw(stRef.current.progress);
       }
 
       buildGrid();
@@ -221,7 +228,40 @@ export default function AboutToContactOverlay({ reducedMotion }) {
       }
       window.addEventListener("resize", handleResize);
 
+      // Mesma causa raiz já tratada em SelectedWorkStage.jsx/
+      // HowIBuildStage.jsx: se a fonte custom (ou o próprio pin deles)
+      // ainda não tinha assentado no instante deste useLayoutEffect,
+      // computeRange() mede contactTop/linkAbsBottom em cima de um layout
+      // temporariamente maior/menor que o final — o trigger fica com
+      // start/end errados pro resto da vida útil do componente (são
+      // números fixos, não expressões "top top" que ScrollTrigger.refresh()
+      // recalcularia sozinho). Sem isso, o range podia pedir um scroll que
+      // o documento corrigido nunca mais alcança — o Contact nunca chega a
+      // revelar (fica preso em opacity 0, tela preta).
+      //
+      // Um único delay fixo não é confiável aqui: SelectedWorkStage/
+      // HowIBuildStage podem levar uma quantidade variável de tempo pra
+      // assentar (depende de fonte, layout, dispositivo). Em vez de
+      // adivinhar um número, observa a altura real do documento — se ela
+      // ainda está mudando, o layout acima do Contact ainda não terminou;
+      // só recalcula createTrigger() quando ela para de mudar (debounce).
+      let settleTimer;
+      let lastHeight = document.body.scrollHeight;
+      const heightObserver = new ResizeObserver(() => {
+        const height = document.body.scrollHeight;
+        if (height === lastHeight) return;
+        lastHeight = height;
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => {
+          buildGrid();
+          createTrigger();
+        }, 120);
+      });
+      heightObserver.observe(document.body);
+
       return () => {
+        clearTimeout(settleTimer);
+        heightObserver.disconnect();
         window.removeEventListener("resize", handleResize);
         stRef.current?.kill();
         entranceTlRef.current?.kill();
