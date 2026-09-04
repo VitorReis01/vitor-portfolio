@@ -4,7 +4,7 @@
 >
 > Referência de qualidade/experiência: [`docs/house-of-yellow-analysis.md`](house-of-yellow-analysis.md) (House of Yellow) — usada como **parâmetro de nível** (ritmo, ousadia, tipografia, movimento, storytelling, interação), nunca como fonte a copiar. Nenhuma cor, fonte, texto, layout completo, asset ou trecho de código da HOY é reutilizado aqui.
 >
-> Fontes de conteúdo real usadas: (1) o conhecimento técnico já validado do projeto `imesul-vendas` neste repositório (arquitetura, segurança, monitoramento — ver `CLAUDE.md`); (2) os números de performance fornecidos diretamente pelo usuário nesta conversa; (3) o perfil público do Instagram **[@vitor.systems](https://www.instagram.com/vitor.systems/)** (bio, nome de exibição, e as legendas completas dos 2 posts públicos visíveis sem login, extraídas do JSON público da página em 2026). Nenhum dado de formação, cargo, cliente, certificação ou número foi inventado — o que não está confirmado está listado explicitamente na seção 19 (Conteúdo faltante).
+> Fontes de conteúdo real usadas: (1) arquitetura, segurança e monitoramento já validados no projeto `imesul-vendas`; (2) os números de performance fornecidos diretamente pelo usuário nesta conversa; (3) o perfil público do Instagram **[@vitor.systems](https://www.instagram.com/vitor.systems/)** (bio, nome de exibição, e as legendas completas dos 2 posts públicos visíveis sem login, extraídas do JSON público da página em 2026). Nenhum dado de formação, cargo, cliente, certificação ou número foi inventado — o que não está confirmado está listado explicitamente na seção 19 (Conteúdo faltante).
 
 ---
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import useReducedMotion from "@/lib/motion/useReducedMotion";
@@ -16,17 +17,15 @@ import EnergyThread from "./EnergyThread";
 
 // Fase 5 — integração final. Não é um protótipo novo: é a composição
 // completa da experiência aprovada (Hero → Selected Work → How I Build →
-// About → Contact) montada como um único fluxo, com o
-// MESMO HeroSection.jsx que a página principal (/prototype/vitor) já usa
-// — reaproveitado por importação direta, não copiado. Toda seção listada
+// About → Contact) montada como um único fluxo. Toda seção listada
 // abaixo é o componente aprovado sem nenhuma linha redesenhada; o
 // trabalho desta rota é orquestração (uma única instância de Lenis, um
 // único CustomCursor, um único EnergyThread), não criação.
 //
-// CapabilitiesSection (usada em PrototypeExperience/página principal) e
-// BootLoader ficam de fora de propósito — não fazem parte da sequência
-// aprovada pra esta integração e o boot loader foi explicitamente
-// adiado.
+// CapabilitiesSection e BootLoader ficam de fora de propósito — não
+// fazem parte da sequência aprovada pra esta integração e o boot loader
+// foi explicitamente adiado. (Ambos existiam em /prototype/vitor, rota
+// de protótipo antiga já removida do repositório.)
 //
 // About e Contact renderizam direto, em fluxo normal (sem wrapper de
 // pin, sem superfície "de mentira") — ver HowIBuildToAboutOverlay.jsx e
@@ -83,14 +82,14 @@ export default function FinalExperience({ prototypeChrome = true }) {
           <span className="font-mono-label text-label rounded-full border border-graphite/30 bg-ink/80 px-3 py-1.5 text-graphite backdrop-blur">
             prototype — final integration
           </span>
-          <a
-            href="/prototype/vitor"
+          <Link
+            href="/"
             data-cursor="label"
             data-cursor-label="back"
             className="font-mono-label text-label text-graphite hover:text-paper"
           >
             ← vitor
-          </a>
+          </Link>
         </div>
       )}
 

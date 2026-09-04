@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchSimpleIcons } from "react-icon-cloud";
+import { useMemo } from "react";
+import TECH_ICONS from "./techIconsData";
 
-// Fase 4 — nova direção do How I Build. Reaproveita a mesma fonte de
-// ícones já usada pelo InteractiveIconCloud (Simple Icons via
-// react-icon-cloud) sem instalar nada novo — só extrai o fetch pra um
-// hook que qualquer apresentação nova (TechMeteorField, aqui) pode
-// consumir, sem depender da Cloud/TagCanvas em si.
+// Ícones hospedados localmente (techIconsData.js) — sem fetch em runtime.
+// Antes buscava via react-icon-cloud/fetchSimpleIcons (cdn.jsdelivr.net +
+// raw.githubusercontent.com); os mesmos 12 slugs consumidos por
+// TechMeteorField.jsx foram extraídos uma única vez da mesma versão
+// (simple-icons@14.0.0) e ficam versionados no repo — visual idêntico,
+// zero origem externa na Home, CSP pode fechar o connect-src.
 //
 // Cada ícone sai em DUAS variantes de cor pré-renderizadas (neutra e
 // "sinal"/cyan) — a escolha de qual usar é por INSTÂNCIA do meteoro, não
@@ -23,30 +24,20 @@ function dataUri(icon, hex) {
 }
 
 export default function useTechIcons(slugs) {
-  const [icons, setIcons] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchSimpleIcons({ slugs }).then(({ simpleIcons }) => {
-      if (cancelled) return;
-      const map = {};
-      Object.values(simpleIcons).forEach((icon) => {
-        map[icon.slug] = {
-          title: icon.title,
-          neutralSrc: dataUri(icon, NEUTRAL_HEX),
-          accentSrc: dataUri(icon, ACCENT_HEX),
-        };
-      });
-      setIcons(map);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => {
+    const map = {};
+    slugs.forEach((slug) => {
+      const icon = TECH_ICONS[slug];
+      if (!icon) return;
+      map[slug] = {
+        title: icon.title,
+        neutralSrc: dataUri(icon, NEUTRAL_HEX),
+        accentSrc: dataUri(icon, ACCENT_HEX),
+      };
     });
-    return () => {
-      cancelled = true;
-    };
+    return map;
     // `slugs` deve ser uma constante estável (definida fora do componente)
     // — é assim que todo consumidor deste hook já usa.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  return icons;
 }

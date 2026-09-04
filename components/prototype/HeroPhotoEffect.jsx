@@ -9,13 +9,16 @@ import { applyVignette, applyBloom, applyGrain, applyGlitchSlices } from "@/lib/
 import { cellShimmer, flicker as flickerAt, damp } from "@/lib/canvasArt/animation";
 
 // Hero visual do site — a arte final já pronta e aprovada
-// (`minha-foto-dev.png`: rosto, fundo preto, partículas e linha ciano já
+// (`minha-foto-dev.webp`: rosto, fundo preto, partículas e linha ciano já
 // compostos) é usada como ÚNICA fonte. Este componente não recorta, não
 // reposiciona e não recria nada da composição — só reinterpreta os
 // pixels dessa imagem numa grade de dither fina e adiciona vida em cima:
 // shimmer lento, partículas próprias, glitch raro e reveal por cursor.
+//
+// WebP lossless, não PNG: pixels decodificados 100% idênticos (verificado
+// byte a byte em RGBA), 38,9% menor (1008KB → 616KB), zero metadata.
 
-const PHOTO_SRC = "/media/hero/minha-foto-dev.png";
+const PHOTO_SRC = "/media/hero/minha-foto-dev.webp";
 
 // Resolução de processamento (grade de células) — desacoplada da
 // resolução de exibição. Cells em ~4px nesse espaço já lêem como "dither

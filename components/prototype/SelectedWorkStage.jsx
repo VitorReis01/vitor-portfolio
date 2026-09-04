@@ -193,10 +193,26 @@ export default function SelectedWorkStage({ reducedMotion, lenisRef }) {
       const initial = computeTarget(PROJECTS[0]);
       gsap.set(shellRef.current, { width: initial.w, height: initial.h });
       gsap.set(videoRef.current, { opacity: 1 });
-      videoRef.current.src = PROJECTS[0].media.src;
-      if (PROJECTS[0].media.poster) videoRef.current.poster = PROJECTS[0].media.poster;
-      videoRef.current.load();
-      videoRef.current.play().catch(() => {});
+
+      // Carrega o vídeo do primeiro projeto só quando o palco está prestes a
+      // entrar na viewport, não no mount da Home inteira — antes disso
+      // baixava e tocava ~2.5MB mesmo pra quem nunca rola até a seção.
+      // rootMargin generoso garante que já esteja pronto quando o pin
+      // engatar, sem atraso visível pra quem rola até aqui.
+      const videoStartObserver = new IntersectionObserver(
+        (entries) => {
+          if (!entries[0].isIntersecting) return;
+          videoStartObserver.disconnect();
+          const video = videoRef.current;
+          if (!video) return;
+          video.src = PROJECTS[0].media.src;
+          if (PROJECTS[0].media.poster) video.poster = PROJECTS[0].media.poster;
+          video.load();
+          video.play().catch(() => {});
+        },
+        { rootMargin: "150px 0px" }
+      );
+      videoStartObserver.observe(stageRef.current);
 
       const st = ScrollTrigger.create({
         trigger: stageRef.current,
@@ -234,7 +250,10 @@ export default function SelectedWorkStage({ reducedMotion, lenisRef }) {
         document.fonts.ready.then(() => ScrollTrigger.refresh());
       }
 
-      return () => st.kill();
+      return () => {
+        st.kill();
+        videoStartObserver.disconnect();
+      };
     }, stageRef);
 
     return () => ctx.revert();
@@ -255,16 +274,28 @@ export default function SelectedWorkStage({ reducedMotion, lenisRef }) {
   // Reduced motion: sem pin, sem scrub, sem sequência — assenta direto no
   // primeiro projeto.
   useEffect(() => {
-    if (!reducedMotion) return;
+    if (!reducedMotion) return undefined;
     const target = computeTarget(PROJECTS[0]);
     gsap.set(shellRef.current, { width: target.w, height: target.h });
     gsap.set(videoRef.current, { opacity: 1, visibility: "visible" });
-    if (videoRef.current) {
-      videoRef.current.src = PROJECTS[0].media.src;
-      if (PROJECTS[0].media.poster) videoRef.current.poster = PROJECTS[0].media.poster;
-      videoRef.current.load();
-      videoRef.current.play().catch(() => {});
-    }
+
+    const video = videoRef.current;
+    if (!video || !stageRef.current) return undefined;
+
+    const videoStartObserver = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
+        videoStartObserver.disconnect();
+        video.src = PROJECTS[0].media.src;
+        if (PROJECTS[0].media.poster) video.poster = PROJECTS[0].media.poster;
+        video.load();
+        video.play().catch(() => {});
+      },
+      { rootMargin: "600px 0px" }
+    );
+    videoStartObserver.observe(stageRef.current);
+
+    return () => videoStartObserver.disconnect();
   }, [reducedMotion, computeTarget]);
 
   // Caixa alvo do overlay — sempre a maior caixa da proporção REAL do
