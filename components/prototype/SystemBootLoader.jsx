@@ -263,8 +263,6 @@ function BootSequence({ onDone }) {
       style={{ backgroundColor: "#040506" }}
       aria-hidden="true"
     >
-      <span className="font-mono-label text-label mb-6 text-graphite/70 sm:mb-8">VITOR.SYSTEMS / BOOT</span>
-
       <div className="relative flex items-center justify-center">
         {showGlobe && <BootGlobe ref={globeRef} size={globeSize} reducedMotion={reducedMotion} />}
       </div>
