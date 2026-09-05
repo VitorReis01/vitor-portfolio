@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import gsap from "gsap";
 import useReducedMotion from "@/lib/motion/useReducedMotion";
 import { damp } from "@/lib/canvasArt/animation";
@@ -246,15 +246,6 @@ function BootSequence({ onDone }) {
 
   const showGlobe = globeSize > 0;
 
-  const microLines = useMemo(
-    () => [
-      { label: "SYS/BOOT", value: "OK" },
-      { label: "SIGNAL", value: "—" },
-      { label: "SESSÃO", value: "NOVA" },
-    ],
-    []
-  );
-
   return (
     <div
       ref={rootRef}
@@ -277,16 +268,6 @@ function BootSequence({ onDone }) {
         </span>
         <span className="font-mono-label text-label text-graphite">{status}</span>
       </div>
-
-      {mode === "full" && (
-        <div className="pointer-events-none absolute bottom-6 left-1/2 hidden -translate-x-1/2 items-center gap-6 sm:flex">
-          {microLines.map((line) => (
-            <span key={line.label} className="font-mono-label text-label text-graphite/50">
-              {line.label} {line.value}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

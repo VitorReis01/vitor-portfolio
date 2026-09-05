@@ -194,13 +194,26 @@ export default function AboutToContactOverlay({ reducedMotion }) {
         // garante que o link ainda esteja confortavelmente na tela
         // (metade inferior) quando o efeito começa.
         const start = linkAbsBottom - window.innerHeight * 0.55;
-        const contactTop = contactWrapRef.current.getBoundingClientRect().top + window.scrollY;
+        const contactRect = contactWrapRef.current.getBoundingClientRect();
+        const contactTop = contactRect.top + window.scrollY;
         // A troca (Contact revelado) acontece em COVER_DONE_AT (90%) do
         // progresso deste trigger. Pra ninguém perceber a troca, a
         // posição real de scroll nesse instante precisa coincidir com o
         // topo do Contact já estar no topo da viewport (+ 5% de folga).
         const targetScrollAt90 = contactTop + window.innerHeight * 0.05;
-        const end = start + Math.max(200, targetScrollAt90 - start) / COVER_DONE_AT;
+        let end = start + Math.max(200, targetScrollAt90 - start) / COVER_DONE_AT;
+        // #contact é garantidamente o último elemento em fluxo normal da
+        // página (ContactClosing foi removido) — seu próprio fundo marca o
+        // scrollHeight real do documento. Sem este clamp, a matemática acima
+        // (pensada para quando ainda existia altura sobrando depois do
+        // Contact) podia pedir um `end` além do scroll máximo que o
+        // documento fisicamente permite: o progresso do trigger nunca
+        // alcançava 1, coverage nunca chegava a 1, e o Contact ficava preso
+        // pra sempre em opacity:0 atrás do canvas de dither (nunca revelado,
+        // "sumido"). Achatar `end` no scroll máximo real garante que dar
+        // scroll até o fim da página sempre termina de revelar o Contact.
+        const trueMaxScroll = contactTop + contactRect.height - window.innerHeight;
+        end = Math.min(end, trueMaxScroll);
         return { start, end };
       }
 
