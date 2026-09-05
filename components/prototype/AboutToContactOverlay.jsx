@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ContactMainStage, ContactClosing } from "./ContactStage";
+import { ContactMainStage } from "./ContactStage";
 
 // Fase 5 — terceira passada: mesma arquitetura de cortina (preservada,
 // não mexida — ver histórico do arquivo), refinamento visual dos
@@ -35,9 +35,12 @@ import { ContactMainStage, ContactClosing } from "./ContactStage";
 // cortina já sumiu por completo: linha por linha do headline (clip via
 // overflow-hidden + yPercent 100→0 + fechamento de letter-spacing),
 // stagger curto entre linhas, depois subtexto, depois CTA, depois
-// system-lines como detalhe final. Nada disso é scroll-scrubbed — é uma
-// timeline GSAP de um tiro, exatamente como pedido ("a microanimação só
-// começa depois que o dither já saiu completamente").
+// system-lines + link do Instagram juntos como detalhe final (mesmo
+// instante do timeline — o Instagram não é mais um componente à parte
+// depois deste, é `absolute` dentro do mesmo wrapper, sem altura
+// própria). Nada disso é scroll-scrubbed — é uma timeline GSAP de um
+// tiro, exatamente como pedido ("a microanimação só começa depois que o
+// dither já saiu completamente").
 const FILL_COLOR = "#0A0B0D";
 const EFFECT_START = 0.4;
 const COVER_DONE_AT = 0.9;
@@ -69,6 +72,7 @@ export default function AboutToContactOverlay({ reducedMotion }) {
   const subtextRef = useRef(null);
   const ctaRef = useRef(null);
   const systemLinesRef = useRef(null);
+  const instagramRef = useRef(null);
   const ambientRef = useRef(null);
 
   useLayoutEffect(() => {
@@ -79,7 +83,7 @@ export default function AboutToContactOverlay({ reducedMotion }) {
       gsap.set(contactWrapRef.current, { opacity: 1 });
       gsap.set(headlineRef.current, { opacity: 1 });
       gsap.set(headlineLineRefs.current, { yPercent: 0, opacity: 1, letterSpacing: "0em" });
-      gsap.set([eyebrowRef.current, subtextRef.current, ctaRef.current, systemLinesRef.current, ambientRef.current], { opacity: 1, y: 0 });
+      gsap.set([eyebrowRef.current, subtextRef.current, ctaRef.current, systemLinesRef.current, instagramRef.current, ambientRef.current], { opacity: 1, y: 0 });
       return undefined;
     }
 
@@ -87,14 +91,14 @@ export default function AboutToContactOverlay({ reducedMotion }) {
     gsap.set(headlineRef.current, { opacity: 1 });
     gsap.set(headlineLineRefs.current, { yPercent: 100, opacity: 0, letterSpacing: "0.05em" });
     gsap.set([subtextRef.current, ctaRef.current], { y: 12 });
-    gsap.set([eyebrowRef.current, subtextRef.current, ctaRef.current, systemLinesRef.current, ambientRef.current], { opacity: 0 });
+    gsap.set([eyebrowRef.current, subtextRef.current, ctaRef.current, systemLinesRef.current, instagramRef.current, ambientRef.current], { opacity: 0 });
 
     function resetEntrance() {
       entranceTlRef.current?.kill();
       gsap.set(headlineLineRefs.current, { yPercent: 100, opacity: 0, letterSpacing: "0.05em" });
       gsap.set(subtextRef.current, { y: 12 });
       gsap.set(ctaRef.current, { y: 12 });
-      gsap.set([eyebrowRef.current, subtextRef.current, ctaRef.current, systemLinesRef.current, ambientRef.current], { opacity: 0 });
+      gsap.set([eyebrowRef.current, subtextRef.current, ctaRef.current, systemLinesRef.current, instagramRef.current, ambientRef.current], { opacity: 0 });
     }
 
     function playEntrance() {
@@ -109,6 +113,7 @@ export default function AboutToContactOverlay({ reducedMotion }) {
         .to(subtextRef.current, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, ">-0.15")
         .to(ctaRef.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, ">-0.12")
         .to(systemLinesRef.current, { opacity: 1, duration: 0.3, ease: "power1.out" }, ">-0.05")
+        .to(instagramRef.current, { opacity: 1, duration: 0.3, ease: "power1.out" }, "<")
         .to(ambientRef.current, { opacity: 0.7, duration: 0.6, ease: "power1.out" }, "<");
       entranceTlRef.current = tl;
     }
@@ -282,11 +287,11 @@ export default function AboutToContactOverlay({ reducedMotion }) {
           subtextRef={subtextRef}
           ctaRef={ctaRef}
           systemLinesRef={systemLinesRef}
+          instagramRef={instagramRef}
           ambientRef={ambientRef}
           reducedMotion={reducedMotion}
         />
       </div>
-      <ContactClosing reducedMotion={reducedMotion} />
     </>
   );
 }

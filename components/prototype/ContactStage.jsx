@@ -2,23 +2,21 @@
 
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// Fase 4 — protótipo 05 (revisão de geometria). Dois componentes, dois
-// beats narrativos distintos, de propósito não fundidos num só:
+// Fase 5 — correção de geometria: o Instagram já foi um componente à
+// parte (ContactClosing), em fluxo normal DEPOIS do statement principal
+// — isso adicionava altura própria ao documento (h-svh/min-height),
+// deixando sobrar scroll depois do enquadramento final aprovado. Removido:
+// o link agora vive DENTRO do próprio ContactMainStage, absolute, sem
+// nenhuma altura própria — o statement principal (headline/subtexto/CTA/
+// system-lines/Instagram) é literalmente o último frame possível da
+// página, porque não existe mais nenhum elemento em fluxo normal depois
+// dele.
 //
-// ContactMainStage — o statement principal (headline/subtexto/CTA +
-// system-returns pequeno perto do CTA). Vive DENTRO da cena pinada de
-// AboutToContactTransition.jsx, absoluto/inset-0 sobre o canvas — a
-// entrada dele é 100% dirigida pelas refs vindas de fora (mesmo
-// `self.progress` que desenha o dither), nunca anima sozinho.
-//
-// ContactClosing — o encerramento (link do Instagram). Vive FORA do pin,
-// em fluxo normal, com sua própria entrada simples ligada à própria
-// posição de scroll — deliberadamente desacoplado do statement
-// principal, pra não misturar "CTA chegou" com "site terminou". É
-// literalmente o fim do documento — sem min-height reservada além do
-// necessário pro próprio conteúdo, pra não sobrar scroll depois dele.
+// ContactMainStage vive DENTRO da cena pinada de AboutToContactOverlay.jsx,
+// absoluto/inset-0 sobre o canvas — a entrada dele é 100% dirigida pelas
+// refs vindas de fora (mesmo `self.progress` que desenha o dither), nunca
+// anima sozinho.
 
 const HEADLINE_LINES = ["VAMOS CONSTRUIR", "ALGO QUE FUNCIONE", "DE VERDADE?"];
 const SUBTEXT = "Se você tem uma ideia, um problema ou um processo que pode funcionar melhor, vamos conversar.";
@@ -126,6 +124,7 @@ export function ContactMainStage({
   subtextRef,
   ctaRef,
   systemLinesRef,
+  instagramRef,
   ambientRef,
   reducedMotion,
 }) {
@@ -205,58 +204,23 @@ export function ContactMainStage({
           <span key={line}>{line}</span>
         ))}
       </div>
-    </div>
-  );
-}
 
-export function ContactClosing({ reducedMotion }) {
-  const closingRef = useRef(null);
-  const linkRef = useRef(null);
-
-  useLayoutEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    gsap.registerPlugin(ScrollTrigger);
-
-    if (reducedMotion) {
-      gsap.set(linkRef.current, { opacity: 1, y: 0 });
-      return undefined;
-    }
-
-    gsap.set(linkRef.current, { opacity: 0, y: 12 });
-
-    const ctx = gsap.context(() => {
-      const st = ScrollTrigger.create({
-        trigger: closingRef.current,
-        start: "top 80%",
-        end: "top 20%",
-        scrub: 0.4,
-        onUpdate: (self) => {
-          const p = self.progress;
-          gsap.set(linkRef.current, { opacity: p, y: 12 * (1 - p) });
-        },
-      });
-      return () => st.kill();
-    }, closingRef);
-
-    return () => ctx.revert();
-  }, [reducedMotion]);
-
-  return (
-    <div ref={closingRef} className="relative flex flex-col items-center justify-center bg-ink px-[var(--gutter)] py-16 text-center">
       {/*
         Único canal de contato real confirmado no projeto todo — mesma
         regra do ContactSection.jsx aprovado da página principal. Nada
         inventado: sem WhatsApp/e-mail/GitHub/LinkedIn até existir um
-        valor real.
+        valor real. `absolute` dentro do mesmo wrapper (que já é
+        `absolute inset-0`) — não adiciona nenhuma altura ao documento,
+        só ocupa um canto do frame que já existe.
       */}
       <a
-        ref={linkRef}
+        ref={instagramRef}
         href="https://www.instagram.com/vitor.systems/"
         target="_blank"
         rel="noreferrer"
         data-cursor="label"
         data-cursor-label="abrir"
-        className="font-mono-label text-label text-paper/70 transition-colors duration-150 hover:text-paper"
+        className="font-mono-label text-label absolute bottom-8 right-[var(--gutter)] z-10 text-paper/70 transition-colors duration-150 hover:text-paper"
       >
         Instagram — @vitor.systems
       </a>
