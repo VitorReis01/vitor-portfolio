@@ -20,7 +20,6 @@ import gsap from "gsap";
 
 const HEADLINE_LINES = ["VAMOS CONSTRUIR", "ALGO QUE FUNCIONE", "DE VERDADE?"];
 const SUBTEXT = "Se você tem uma ideia, um problema ou um processo que pode funcionar melhor, vamos conversar.";
-const SYSTEM_LINES = ["SINAL.............. ADQUIRIDO", "CANAL................ ABERTO", "STATUS............. PRONTO"];
 const THREAD_COLOR = "150, 225, 255";
 
 const AMBIENT_COUNT_DESKTOP = 14;
@@ -102,7 +101,7 @@ function TerminalCTA({ reducedMotion }) {
       className="relative inline-flex items-center gap-2 rounded-full border border-paper/15 px-7 py-3.5 transition-colors duration-200 hover:border-[rgba(150,225,255,0.5)]"
     >
       <span ref={innerRef} className="font-mono-label text-label inline-flex items-center gap-1 text-paper transition-colors duration-200 [a:hover_&]:text-[rgb(150,225,255)]">
-        <span>&gt; iniciar projeto</span>
+        <span>&gt; SOLICITAR ANÁLISE DO PROJETO</span>
         <span ref={cursorRef} className="ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.1em] bg-current" />
       </span>
       {[0, 1].map((i) => (
@@ -199,11 +198,6 @@ export function ContactMainStage({
         <TerminalCTA reducedMotion={reducedMotion} />
       </div>
 
-      <div ref={systemLinesRef} className="font-mono-label text-label relative z-10 flex flex-col items-center gap-1 text-graphite/50">
-        {SYSTEM_LINES.map((line) => (
-          <span key={line}>{line}</span>
-        ))}
-      </div>
 
       {/*
         Único canal de contato real confirmado no projeto todo — mesma
